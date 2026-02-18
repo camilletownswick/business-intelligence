@@ -1,0 +1,114 @@
+---
+title: 'class_04 & 05: intro to APIs'
+author: "Cam Townswick"
+date: "2026-02-09"
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    number_sections: TRUE
+    code_folding: show
+    code_download: TRUE
+    theme: simplex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Demo # 1: USA Jobs
+
+```{r our_request}
+# this is javascript so changing it to R below, used ctrl + shift + c to automatically put # & deactivate the code
+# var request = require('request');    
+#             
+# var host = 'data.usajobs.gov';  
+# var userAgent = 'your@email.address';  
+# var authKey = 'YourAPIKey';    
+#             
+# request({      
+#     url: 'https://data.usajobs.gov/api/search?JobCategoryCode=2210&Keyword=Software Development&LocationName=Washington, DC',      
+#     method: 'GET',      
+#     headers: {          
+#         "Host": host,          
+#         "User-Agent": userAgent,          
+#         "Authorization-Key": authKey      
+#     }  
+# }, function(error, response, body) {      
+#     var data = JSON.parse(body);  
+# });
+
+host = 'data.usajobs.gov'
+user_agent = 'townswcc@miamioh.edu'
+auth_key = Sys.getenv('USAJOBS_API_KEY')
+
+# this was an unfiltered request, so we want to add to the url and other search factors to find specific information, looking back at the javascript to start, using httr2::req_url_query(), jobcat=#, keyword="", etc. 
+req = httr2::request('https://data.usajobs.gov/api/search') |> 
+  httr2::req_method("GET") |>
+  httr2:: req_headers(
+    Host = host, 
+    # on the left-hand side is the name of argument for the req headers per the API
+    # (R does not like spaces or dashes in variable names and that is why we added the backticks `` for user-agent)
+    # on the right-hand side is the name of the object as I created it in R
+    'User-Agent' = user_agent,
+    'Authorization-Key' = auth_key
+  ) |>
+    httr2::req_url_query(
+      JobCategoryCode=2210, # showing you an example similar to the documentation (javascript URL)
+      Keyword="Data Analyst", # could have also added LocationName
+      ResultsPerPage = 500
+    )
+
+# executes the requedst and gets a response back
+response = httr2::req_perform(req)
+
+# let us get the data out of the response object (parse the data)
+usajobs_data = response |> 
+  httr2::resp_body_string() |>
+jsonlite::fromJSON(flatten = T)
+# or httr2:resp_body_json()
+
+# usajobs_data returned a nested list which we examined in the environment "viewer" (by clicking on the blue circle with an arrow in it)
+# hashed dplyr because the glimpse was too much data in the knit file, annoying
+# dplyr::glimpse(usajobs_data)
+
+# from the step above, de-nest this, pepper packet subsetting example
+
+usajobs_df = usajobs_data$SearchResult$SearchResultItems |>
+  # to pull list columns from the date (i.e., a col that contains a data frame)
+  tidyr::unnest(
+    # I did not unlist all columns; below is just a sample of how
+    # to approach this
+    cols = c("MatchedObjectDescriptor.PositionLocation",
+             "MatchedObjectDescriptor.JobCategory",
+             "MatchedObjectDescriptor.PositionOfferingType"),
+    names_sep = '.'
+)
+
+table(usajobs_df$MatchedObjectDescriptor.DepartmentName)
+# messy but what we did for class
+usajobs_df |>
+  dplyr::count(
+    MatchedObjectDescriptor.OrganizationName
+  )
+
+# look at notes from class 05 to see the logic behind using names_sep
+
+```
+
+To answer the questions that we have:
+
+1. The total number of federally available "Data Analyst"-related jobs can be computed using `unique(usajobs_df$MatchedObjectId) |> length()` and is equal to: 31.
+
+2. 
+
+
+
+
+
+
+
+
+
+
+

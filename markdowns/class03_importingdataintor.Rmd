@@ -1,0 +1,103 @@
+---
+title: 'Class 03: Importing Data in R'
+author: "Cam Townswick"
+date: "2026-02-04"
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    number_sections: TRUE
+    code_folding: show
+    code_download: TRUE
+    theme: simplex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Reading CSV Files
+
+## Locally
+
+Note because you chose to use RMarkdown, there could be a discrepancy between the path needed for when you run the code line by line and when you run it in RMarkdown.
+
+- **RMarkdown Run:** Uses the path based on the RMarkdown file location.
+- **Line-by-Line Testing:** Uses the path based on the Project location.
+
+So to fix this, whenever we open an RMarkdown, we will automatically set the working directory to the folder containing the markdown.
+
+
+```{r local_file}
+usa_df = readr::read_csv("../datasets/US000.csv")
+```
+
+
+## From an Online Location
+
+```{r fred}
+unrate = readr::read_csv("https://fred.stlouisfed.org/graph/fredgraph.csv?bgcolor=%23ebf3fb&chart_type=line&drp=0&fo=open%20sans&graph_bgcolor=%23ffffff&height=450&mode=fred&recession_bars=on&txtcolor=%23444444&ts=12&tts=12&width=1101&nt=0&thu=0&trc=0&show_legend=yes&show_axis_titles=yes&show_tooltip=yes&id=UNRATE&scale=left&cosd=1948-01-01&coed=2025-12-01&line_color=%230073e6&link_values=false&line_style=solid&mark_type=none&mw=3&lw=3&ost=-99999&oet=99999&mma=0&fml=a&fq=Monthly&fam=avg&fgst=lin&fgsnd=2020-02-01&line_index=1&transformation=lin&vintage_date=2026-02-04&revision_date=2026-02-04&nd=1948-01-01")
+
+# Dr. Megahead was going fast so missed this unrate_read_dot_csv = read.csv("")
+
+dplyr::glimpse(unrate)
+# Dr. Megahead was going fast so missed this dplyr::glimpse(unrate_read_dot_csv)
+```
+
+## From GitHub
+
+You need to get the path for the raw file since that strips away any HTML.
+
+```{r gitbhub_csv}
+super_bowl = readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/2e9bd5a67e09b14d01f616b00f7f7e0931515d24/data/2021/2021-03-02/youtube.csv")
+```
+
+# Reading JSON Files
+
+To read JSON files, we will use the **jsonlite** package.
+
+```{r json_demo}
+cincy_jobs = jsonlite::fromJSON(
+  txt = "https://www.themuse.com/api/public/jobs?page=1&location=Cincinnati%2C%20OH",
+  flatten = T
+)
+
+# the viewing of the link on chrome
+cincy_jobs_res = cincy_jobs[['results']] # $results or [[7]]
+
+# overwriting my results, 
+cincy_jobs_res = cincy_jobs_res |>
+  tidyr::unnest(
+    # specifying the lsit columns (hoping to make them contain single values)
+    # these were identified by running dyplr::glimps(cincy_jobs_res) in console
+    cols = c('locations'),
+    names_repair = "universal"
+  ) 
+  
+# if you want to combine the different rows for that same job that got put in 4 rows, you can group by the job id (unique) and then summarize to combine the 
+# locations field using commas [good use of AI] with the constraint of keeping all cols
+
+names(cincy_jobs)
+View(cincy_jobs_res)
+```
+
+Note that the choice of converting from list columsn to separate cols/rows will depend on your data analysis strategy.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
